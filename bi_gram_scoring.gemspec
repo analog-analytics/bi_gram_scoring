@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'bi_gram_scoring'
-  s.version     = '0.0.0'
+  s.version     = '0.0.1'
   s.date        = '2011-12-13'
   s.summary     = "String similarity scoring"
   s.description = "String similarity scoring using bi-gram frequency"
