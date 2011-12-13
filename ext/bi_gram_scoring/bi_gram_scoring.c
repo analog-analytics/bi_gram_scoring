@@ -11,6 +11,7 @@
 typedef struct entry {
   VALUE key;
   VALUE val;
+  VALUE arg;
   struct entry *next;
 } entry_t;
 
@@ -20,10 +21,11 @@ typedef struct entry {
 #define ENTRY_VAL_PTR(entry) (RSTRING(entry->val)->ptr)
 #define ENTRY_VAL_LEN(entry) (RSTRING(entry->val)->len)
 
-static entry_t *entry_init_(VALUE key, VALUE val) {
+static entry_t *entry_init_(VALUE key, VALUE val, VALUE arg) {
   entry_t *entry = malloc(sizeof(*entry));
   entry->key = key;
   entry->val = val;
+  entry->arg = arg;
   entry->next = NULL;
   return entry;
 }
@@ -227,11 +229,11 @@ static void remove_head_entry_(bi_gram_scoring_t *instance) {
 /*
  * Public instance method: add_entry(key, val)
  */
-static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb_val) {
+static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb_val, VALUE rb_arg) {
   struct bi_gram_scoring *instance;
   entry_t *entry;
   double max_score = -1.0;
-  VALUE max_score_key = Qnil;
+  entry_t *max_score_entry = NULL;
   int i;
   VALUE retval;
 
@@ -248,12 +250,13 @@ static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb
   if ((entry = hash_find_entry_(instance, rb_key))) {
     increment_bi_gram_counts_(instance, entry, -1);
     entry->val = rb_val;
+    entry->arg = rb_arg;
     increment_bi_gram_counts_(instance, entry, +1);
   } else {
     while (instance->entries_count >= instance->capacity) {
       remove_head_entry_(instance);
     }
-    instance->entries[instance->entries_count++] = entry = entry_init_(rb_key, rb_val);
+    instance->entries[instance->entries_count++] = entry = entry_init_(rb_key, rb_val, rb_arg);
     hash_link_entry_(instance, entry);
     increment_bi_gram_counts_(instance, entry, +1);
   }
@@ -263,17 +266,18 @@ static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb
     double score = score_(instance, entry, instance->entries[i]);
     if (max_score < score) {
       max_score = score;
-      max_score_key = instance->entries[i]->key;
+      max_score_entry = instance->entries[i];
     }
   }
   retval = rb_ary_new();
   rb_ary_push(retval, rb_float_new(max_score));
-  rb_ary_push(retval, max_score_key);
+  rb_ary_push(retval, max_score_entry ? max_score_entry->key : Qnil);
+  rb_ary_push(retval, max_score_entry ? max_score_entry->arg : Qnil);
   return retval;
 }
 
 void Init_bi_gram_scoring() {
   bi_gram_scoring = rb_define_class("BiGramScoring", rb_cObject);
   rb_define_singleton_method(bi_gram_scoring, "new", rb_bi_gram_scoring_new_, 1);
-  rb_define_method(bi_gram_scoring, "add_entry", rb_bi_gram_scoring_add_entry_, 2);
+  rb_define_method(bi_gram_scoring, "add_entry", rb_bi_gram_scoring_add_entry_, 3);
 }
