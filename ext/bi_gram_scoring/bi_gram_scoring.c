@@ -33,6 +33,7 @@ static entry_t *entry_init_(VALUE key, VALUE val, VALUE arg) {
 static void entry_mark_(entry_t *entry) {
   rb_gc_mark(entry->key);
   rb_gc_mark(entry->val);
+  rb_gc_mark(entry->arg);
 }
 
 static void entry_free_(entry_t *entry) {
@@ -227,7 +228,7 @@ static void remove_head_entry_(bi_gram_scoring_t *instance) {
 }
 
 /*
- * Public instance method: add_entry(key, val)
+ * Public instance method: add_entry(key, val, arg)
  */
 static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb_val, VALUE rb_arg) {
   struct bi_gram_scoring *instance;
