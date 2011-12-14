@@ -9,31 +9,29 @@ all two-character combinations (bi-grams) in two strings being scored.
 
 First, create a bi_gram_scoring instance:
 
-  require 'bi_gram_scoring'
-  bi_gram_scoring = BiGramScoring.new(500)
+    require 'bi_gram_scoring'
+    bi_gram_scoring = BiGramScoring.new(500)
 
 The parameter passed to `BiGramScoring#new` is the _capacity_ of the instance.
-Once the instance reaches this capacity, adding a new entry will eject the
-first entry, so in effect the instance retains a rolling window of the entries
-that have been added.
+Once the instance reaches its capacity, adding a new entry ejects the first
+entry, so in effect the instance retains a rolling window of the added entries.
 
 To add a new entry:
 
-  score, matching_key, matching_arg = bi_gram_scoring.add_entry(key, value, arg)
+    score, matching_key, matching_arg = bi_gram_scoring.add_entry(key, value, arg)
 
 where:
 
- * `key` is a string used to identify the entry; if an entry is added with
-   the same key as an entry added earlier (and not subsquently ejected), the
-   existing entry is overwritten with the new value and arg.
+ * `key` is a string used to identify the entry. If an entry is added with
+   the same key as a retained entry, the existing entry is overwritten.
 
  * `value` is the string that will be scored.
 
  * `arg` is a pass-through value associated with this entry
 
 The `BiGramScoring#add_entry` method returns the maximum `score` (a value between
-0.0 and 1.0) of the new entry, compared to all existing entries, and the key and
-arg values of the existing entry with the maximum score against the new entry.
+0.0 and 1.0) of the new entry, compared to all retained entries, and the key and
+arg values of the retained  entry with the maximum score against the new entry.
 
 
 
