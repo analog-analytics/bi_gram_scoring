@@ -23,15 +23,15 @@ To add a new entry:
 where:
 
  * `key` is a string used to identify the entry. If an entry is added with
-   the same key as a retained entry, the existing entry is overwritten.
+   the same key as a retained entry, the existing entry is overwritten;
 
- * `value` is the string that will be scored.
+ * `value` is the string that will be scored;
 
- * `arg` is a pass-through value associated with this entry
+ * `arg` is a pass-through value associated with this entry.
 
-The `BiGramScoring#add_entry` method returns the maximum `score` (a value between
-0.0 and 1.0) of the new entry, compared to all retained entries, and the key and
-arg values of the retained  entry with the maximum score against the new entry.
+The method returns the maximum `score` (a value between 0.0 and 1.0) of the new
+entry, compared against all other retained entries, as well as the key and arg
+values of the retained entry having the maximum score against the new entry.
 
 
 
