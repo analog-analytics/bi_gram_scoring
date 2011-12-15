@@ -22,7 +22,7 @@ typedef struct entry {
 #define ENTRY_VAL_LEN(entry) (RSTRING(entry->val)->len)
 
 static entry_t *entry_init_(VALUE key, VALUE val, VALUE arg) {
-  entry_t *entry = malloc(sizeof(*entry));
+  entry_t *entry = ALLOC(entry_t);
   entry->key = key;
   entry->val = val;
   entry->arg = arg;
@@ -104,10 +104,11 @@ static VALUE rb_bi_gram_scoring_new_(VALUE rb_class, VALUE rb_capacity) {
     rb_raise(rb_eArgError, "capacity must be a positive number");
     return Qnil;
   }
-  bi_gram_scoring_t *instance = malloc(sizeof(bi_gram_scoring_t));
+  bi_gram_scoring_t *instance = ALLOC(bi_gram_scoring_t);
   instance->capacity = capacity;
   instance->entries_count = 0;
-  instance->entries = malloc(capacity*sizeof(entry_t *));
+  memset(instance->bi_gram_counts, 0, sizeof(instance->bi_gram_counts));
+  instance->entries = ALLOC_N(entry_t*, capacity);
   memset(instance->entries_hash, 0, sizeof(instance->entries_hash));
   return Data_Wrap_Struct(rb_class, bi_gram_scoring_mark_, bi_gram_scoring_free_, instance);
 }
@@ -123,6 +124,7 @@ static void increment_bi_gram_counts_(bi_gram_scoring_t *instance, const entry_t
   const int count = ENTRY_VAL_LEN(entry) - 1;
   int i;
   unsigned char flags[BIT_SET_SIZE(BI_GRAM_VALUE_COUNT)];
+
   memset(flags, 0, sizeof(flags));
   for (i = 0; i < count; i++) {
     const bi_gram_t bi_gram = BI_GRAM_VALUE(ENTRY_VAL_PTR(entry), i);
@@ -166,7 +168,8 @@ static double score_(const bi_gram_scoring_t *instance, const entry_t *entry_1, 
   for (i = 0; i < count_2; i++) {
     total += instance->bi_gram_weights[BI_GRAM_VALUE(ENTRY_VAL_PTR(entry_2), i)];
   }
-  flags = calloc(BIT_SET_SIZE(count_2), 1);
+  flags = ALLOCA_N(char, BIT_SET_SIZE(count_2));
+  memset(flags, 0, BIT_SET_SIZE(count_2));
   for (i = 0; i < count_1; i++) {
     const bi_gram_t bi_gram = BI_GRAM_VALUE(ENTRY_VAL_PTR(entry_1), i);
     for (j = 0; j < count_2; j++) {
@@ -177,7 +180,6 @@ static double score_(const bi_gram_scoring_t *instance, const entry_t *entry_1, 
       }
     }
   }
-  free(flags);
   return 0.0 < total ? 2.0*joint/total : 0.0;
 }
 
@@ -224,7 +226,6 @@ static void remove_head_entry_(bi_gram_scoring_t *instance) {
   hash_drop_entry_(instance, entry);
   increment_bi_gram_counts_(instance, entry, -1);
   entry_free_(entry);
-  
 }
 
 /*
@@ -265,6 +266,7 @@ static VALUE rb_bi_gram_scoring_add_entry_(VALUE rb_self, VALUE rb_key, VALUE rb
 
   for (i = 0; i < instance->entries_count && entry != instance->entries[i]; i++) {
     double score = score_(instance, entry, instance->entries[i]);
+
     if (max_score < score) {
       max_score = score;
       max_score_entry = instance->entries[i];
