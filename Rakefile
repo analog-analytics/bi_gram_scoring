@@ -19,8 +19,14 @@ CLEAN.include('ext/**/*{.o,.log,.so,.bundle}')
 CLEAN.include('ext/**/Makefile')
 CLOBBER.include('lib/**/*{.so,.bundle}')
 
+# Rake::TestTask.new do |t|
+  # t.libs << 'test'
+# end
 Rake::TestTask.new do |t|
-  t.libs << 'test'
+  files = FileList['test/test_*.rb']
+  t.test_files = files
+  t.libs << "."
+  t.warning = true
 end
 
 desc "Run tests"
